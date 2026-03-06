@@ -5,21 +5,33 @@ import random
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
-from src.config import INPUT_FILE, NUM_WORKERS_PARSER, OUTPUT_FILE, HEADERS, COLUMNS, FIELD_MAP, APARTMENT_SUBTYPES, HOUSE_SUBTYPES
+from src.config import (
+    INPUT_FILE,
+    NUM_WORKERS_PARSER,
+    OUTPUT_FILE,
+    HEADERS,
+    COLUMNS,
+    FIELD_MAP,
+    APARTMENT_SUBTYPES,
+    HOUSE_SUBTYPES,
+)
 
 session = requests.Session()
 session.headers.update(HEADERS)
+
 
 # Loads and filters valid listing URLs from a text file
 def load_urls(filename):
     with open(filename, "r", encoding="utf-8") as f:
         urls = [
-            line.strip() for line in f
+            line.strip()
+            for line in f
             if line.strip()
             and "/detail/" in line
-            and "/projectdetail/" not in line   # filters projectdetail
+            and "/projectdetail/" not in line  # filters projectdetail
         ]
     return urls
+
 
 # Fetches the HTML content of a single listing page
 def fetch_page(url, session):
@@ -33,9 +45,11 @@ def fetch_page(url, session):
         print(f"  ✗ Could not fetch {url}: {e}")
         return None
 
+
 # ─────────────────────────────────────────────
 # Parse helpers
 # ─────────────────────────────────────────────
+
 
 # Determines the property category based on its subtype
 def get_property_type(subtype):
@@ -47,23 +61,26 @@ def get_property_type(subtype):
     else:
         return "Other"
 
+
 # Extracts and cleans the property price from the HTML
 def extract_price(soup):
     price_tag = soup.select_one(".detail__header_price_data")
     if price_tag:
-        raw_price     = price_tag.get_text(strip=True)
-        clean_price =  re.sub(r"[^\d]", "", raw_price)
+        raw_price = price_tag.get_text(strip=True)
+        clean_price = re.sub(r"[^\d]", "", raw_price)
         return clean_price if clean_price else None
     return None
+
 
 # Extracts the city or locality of the property
 def extract_locality(soup):
     locality_tag = soup.select_one(".city-line")
     if locality_tag:
         raw_locality = locality_tag.get_text(strip=True)
-        indexed_locality  = raw_locality
+        indexed_locality = raw_locality
         return indexed_locality
     return None
+
 
 # Extracts additional property attributes from the info table
 def extract_fields(soup):
@@ -107,25 +124,26 @@ def extract_fields(soup):
 
     return fields_more_info
 
+
 # Parses a single listing page into structured data
 def parse_listing(html, url):
     soup = BeautifulSoup(html, "html.parser")
     split_url = url.split("/")
 
-    data_all_info = {col: None for col in COLUMNS} #None for empty values
+    data_all_info = {col: None for col in COLUMNS}  # None for empty values
 
-    #get type of sale
-    data_all_info["type_of_sale"] = split_url[6].replace("-", " ") if len(split_url) > 6 else None
-    #get price
+    # get type of sale
+    data_all_info["type_of_sale"] = (
+        split_url[6].replace("-", " ") if len(split_url) > 6 else None
+    )
+    # get price
     data_all_info["price_eur"] = extract_price(soup)
-    #get locality
+    # get locality
     data_all_info["locality"] = extract_locality(soup)
-
 
     data_all_info.update(extract_fields(soup))
 
-
-    #get property type
+    # get property type
     subtype_raw = split_url[5] if len(split_url) > 5 else None
     if subtype_raw:
         subtype = subtype_raw.replace("-", " ").title()
@@ -133,9 +151,11 @@ def parse_listing(html, url):
         data_all_info["property_type"] = get_property_type(subtype)
     return data_all_info
 
+
 # ─────────────────────────────────────────────
 # Worker — one thread runs this per URL
 # ─────────────────────────────────────────────
+
 
 # Scrapes one listing (executed by each thread)
 def scrape_one(args):
@@ -147,17 +167,21 @@ def scrape_one(args):
     if not html:
         return None
     data = parse_listing(html, url)
-    print(f"  [{index}/{total}] ✓ {data['locality']} | {data['price_eur']}€ | {data['property_type']}")
+    print(
+        f"  [{index}/{total}] ✓ {data['locality']} | {data['price_eur']}€ | {data['property_type']}"
+    )
     return data
+
 
 # ─────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────
 
+
 # Coordinates multi-threaded scraping of all listings
 def scrape_all_lisitng():
     all_urls = load_urls(INPUT_FILE)  # remove [:200] to scrape everything
-    total    = len(all_urls)
+    total = len(all_urls)
     print(f"Loaded {total} URLs — scraping with 20 threads")
 
     # Each thread gets its own session
@@ -167,10 +191,9 @@ def scrape_all_lisitng():
 
     jobs = []
     for i, url in enumerate(all_urls):
-        session = sessions[i % NUM_WORKERS_PARSER]   # pick a session
-        index   = i + 1              # display number
+        session = sessions[i % NUM_WORKERS_PARSER]  # pick a session
+        index = i + 1  # display number
         jobs.append((url, session, index, total))
-
 
     all_data = []
     with ThreadPoolExecutor(max_workers=NUM_WORKERS_PARSER) as executor:
@@ -181,6 +204,7 @@ def scrape_all_lisitng():
                 all_data.append(result)
 
     return all_data
+
 
 # save to pandas Dataframe function
 def save_to_pd_csv(all_data):

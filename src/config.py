@@ -1,15 +1,33 @@
 BASE_URL = "https://immovlan.be/en/real-estate"
 
-PARAMS   = "transactiontypes=for-sale,in-public-sale&propertytypes=house,apartment"
+PARAMS = "transactiontypes=for-sale,in-public-sale&propertytypes=house,apartment"
 
-APARTMENT_SUBTYPES = {"apartment", "studio", "penthouse", "duplex", "ground floor", "triplex", "loft"}
-HOUSE_SUBTYPES     = {"residence", "mixed building", "villa", "master house", "bungalow", "chalet", "mansion", "house", "cottage"}
+APARTMENT_SUBTYPES = {
+    "apartment",
+    "studio",
+    "penthouse",
+    "duplex",
+    "ground floor",
+    "triplex",
+    "loft",
+}
+HOUSE_SUBTYPES = {
+    "residence",
+    "mixed building",
+    "villa",
+    "master house",
+    "bungalow",
+    "chalet",
+    "mansion",
+    "house",
+    "cottage",
+}
 
-NUM_WORKERS_PARSER = 20 # workers for threadpoolexec
+NUM_WORKERS_PARSER = 20  # workers for threadpoolexec
 NUM_WORKERS_SCRAPER = 10
 
 # CONSTANT variables in phase2.py
-INPUT_FILE  = "data/raw/all_provinces_links.csv"
+INPUT_FILE = "data/raw/all_provinces_links.csv"
 OUTPUT_FILE = "data/processed/listings.csv"
 
 HEADERS = {
@@ -70,16 +88,16 @@ COLUMNS = [
 ]
 
 FIELD_MAP = {
-    "number of bedrooms":        "num_rooms",
-    "livable surface":           "living_area_m2",
-    "kitchen equipment":         "fully_equipped_kitchen",
-    "furnished":                 "furnished",
-    "terrace":                   "terrace",
-    "surface terrace":           "terrace_area_m2",
-    "garden":                    "garden",
-    "surface garden":            "garden_area_m2",
-    "total land surface":        "land_surface_m2",
-    "number of facades":         "num_facades",
-    "swimming pool":             "swimming_pool",
-    "state of the property":     "state_of_building",
+    "number of bedrooms": "num_rooms",
+    "livable surface": "living_area_m2",
+    "kitchen equipment": "fully_equipped_kitchen",
+    "furnished": "furnished",
+    "terrace": "terrace",
+    "surface terrace": "terrace_area_m2",
+    "garden": "garden",
+    "surface garden": "garden_area_m2",
+    "total land surface": "land_surface_m2",
+    "number of facades": "num_facades",
+    "swimming pool": "swimming_pool",
+    "state of the property": "state_of_building",
 }
