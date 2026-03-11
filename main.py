@@ -1,5 +1,5 @@
 from src.scraper import collect_all_urls, save_to_csv
-from src.parser import scrape_all_lisitng as run_parser, save_to_pd_csv
+from src.parser import scrape_all_listings as run_parser, save_to_pd_csv
 
 
 if __name__ == "__main__":

@@ -179,7 +179,7 @@ def scrape_one(args):
 
 
 # Coordinates multi-threaded scraping of all listings
-def scrape_all_lisitng():
+def scrape_all_listings():
     all_urls = load_urls(INPUT_FILE)  # remove [:200] to scrape everything
     total = len(all_urls)
     print(f"Loaded {total} URLs — scraping with 20 threads")

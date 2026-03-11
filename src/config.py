@@ -85,9 +85,11 @@ COLUMNS = [
     "num_facades",
     "swimming_pool",
     "state_of_building",
+    "num_bathrooms"
 ]
 
 FIELD_MAP = {
+    "number of toilets": "num_bathrooms",
     "number of bedrooms": "num_rooms",
     "livable surface": "living_area_m2",
     "kitchen equipment": "fully_equipped_kitchen",
