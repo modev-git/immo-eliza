@@ -23,7 +23,7 @@ HOUSE_SUBTYPES = {
     "cottage",
 }
 
-NUM_WORKERS_PARSER = 20  # workers for threadpoolexec
+NUM_WORKERS_PARSER = 10  # workers for threadpoolexec
 NUM_WORKERS_SCRAPER = 10
 
 # CONSTANT variables in phase2.py
@@ -85,9 +85,13 @@ COLUMNS = [
     "num_facades",
     "swimming_pool",
     "state_of_building",
+    "num_bathrooms",
+    "dist_train_km",
+    "dist_bus_km"
 ]
 
 FIELD_MAP = {
+    "number of toilets": "num_bathrooms",
     "number of bedrooms": "num_rooms",
     "livable surface": "living_area_m2",
     "kitchen equipment": "fully_equipped_kitchen",
