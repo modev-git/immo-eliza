@@ -82,6 +82,36 @@ def extract_locality(soup):
     return None
 
 
+# Convert distance to km
+def parse_distance_to_km(text):
+    match = re.search(r"([\d.]+)\s*(m|km)", text)
+    if not match:
+        return None
+    value, unit = float(match.group(1)), match.group(2)
+    return round(value / 1000 if unit == "m" else value, 3)
+
+
+# Extract proximity from means of transport
+def extract_proximity():
+    result = {"dist_train_km": None, "dist_bus_km": None}
+
+    targets = {"mi-train": "dist_train_km", "mi-bus": "dist_bus_km"}
+
+    for icon_class, col in targets.items():
+        icon = soup.select_one(f"i.{icon_class}")
+        if not icon:
+            continue
+        data_row = icon.find_parent("div", class_="data-row")
+        if not data_row:
+            continue
+        walking_span = data_row.select_one('span[title="Walking"]')
+        if not walking_span:
+            continue
+        result[col] = parse_distance_to_km(walking_span.get_text(strip=True))
+
+    return result
+
+
 # Extracts additional property attributes from the info table
 def extract_fields(soup):
     """
@@ -136,10 +166,15 @@ def parse_listing(html, url):
     data_all_info["type_of_sale"] = (
         split_url[6].replace("-", " ") if len(split_url) > 6 else None
     )
+
     # get price
     data_all_info["price_eur"] = extract_price(soup)
+
     # get locality
     data_all_info["locality"] = extract_locality(soup)
+
+    # get distance
+    data_all_info.update(extract_proximity(soup))
 
     data_all_info.update(extract_fields(soup))
 
@@ -161,7 +196,7 @@ def parse_listing(html, url):
 def scrape_one(args):
     url, session, index, total = args
     print(f"  [{index}/{total}] Scraping: {url}")
-    time.sleep(random.uniform(0.5, 1.0))
+    time.sleep(random.uniform(0.7, 1.0))
 
     html = fetch_page(url, session)
     if not html:
