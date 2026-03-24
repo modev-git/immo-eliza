@@ -9,8 +9,11 @@ from predict.prediction import predict
 
 
 app = FastAPI(
-    title="ImmoEliza Price Prediction API",
-    description="API to predict Belgian real estate prices",
+    title="ImmoEliza — Belgian Real Estate Price Predictor",
+    description=(
+        "Predicts house and apartment prices across Belgium using an XGBoost "
+        "model trained on ~23,000 listings scraped from immovlan.be."
+    ),
     version="1.0.0",
 )
 
@@ -18,31 +21,25 @@ app = FastAPI(
 # ===============================
 # Request / response schemas
 # ===============================
-class HouseData(BaseModel):
-    area: int = Field(..., gt=0, description="Living area in square meters")
-    property_type: Literal["APARTMENT", "HOUSE", "OTHERS"] = Field(
-    ...,
-    alias="property-type",
-    )
-    rooms_number: int = Field(..., gt=0, alias="rooms-number")
-    zip_code: int = Field(..., alias="zip-code")
 
+class HouseData(BaseModel):
+    area: int = Field(..., gt=0, description="Living area in m²")
+    property_type: str = Field(..., alias="property-type", description="Type of property ('House', 'Apartment', 'Other')")
+    rooms_number: int = Field(..., alias="rooms-number")
+    zip_code: int = Field(..., alias="zip-code")
     land_area: Optional[int] = Field(None, alias="land-area")
-    garden: Optional[bool] = None
+    garden: Optional[bool] = Field(default=False)
     garden_area: Optional[int] = Field(None, alias="garden-area")
-    equipped_kitchen: Optional[bool] = Field(None, alias="equipped-kitchen")
+    equipped_kitchen: Optional[bool] = Field(alias="equipped-kitchen", default=False)
     full_address: Optional[str] = Field(None, alias="full-address")
-    swimming_pool: Optional[bool] = Field(None, alias="swimming-pool")
-    furnished: Optional[bool] = None
-    open_fire: Optional[bool] = Field(None, alias="open-fire")
-    terrace: Optional[bool] = None
+    swimming_pool: Optional[bool] = Field(alias="swimming-pool", default=False)
+    furnished: Optional[bool] = Field(default=False)
+    terrace: Optional[bool] = Field(default=False)
     terrace_area: Optional[int] = Field(None, alias="terrace-area")
     facades_number: Optional[int] = Field(None, alias="facades-number")
-    dist_train_km: Optional[float] = Field(None, alias="dist-train-km")
-    dist_bus_km: Optional[float] = Field(None, alias="dist-bus-km")
     building_state: Optional[
         Literal["NEW", "GOOD", "TO RENOVATE", "JUST RENOVATED", "TO REBUILD"]
-    ] = Field(None, alias="building-state")
+    ] = Field(default=None, alias="building-state", description="State of the building")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -55,65 +52,11 @@ class PredictionResponse(BaseModel):
     prediction: Optional[float]
     status_code: int
 
-
-# ===============================
-# Helper functions
-# ===============================
-def map_property_type(value: str) -> str:
-    mapping = {
-        "APARTMENT": "Apartment",
-        "HOUSE": "House",
-        "OTHERS": "Others",
-    }
-    return mapping.get(value, "Others")
-
-
-def map_building_state(value: Optional[str]) -> Optional[str]:
-    if value is None:
-        return None
-
-    mapping = {
-        "NEW": "New",
-        "GOOD": "Good",
-        "TO RENOVATE": "To renovate",
-        "JUST RENOVATED": "Fully renovated",
-        "TO REBUILD": "To demolish",
-    }
-    return mapping.get(value, None)
-
-
-def normalize_payload(house: HouseData) -> pd.DataFrame:
-    """
-    Convert API input into the dataframe format expected
-    by preprocessing.cleaning_data.preprocess().
-    """
-    row = {
-        "living_area_m2": house.area,
-        "property_type": map_property_type(house.property_type),
-        "num_rooms": house.rooms_number,
-        "postal_code": house.zip_code,
-        "land_surface_m2": house.land_area,
-        "garden": int(house.garden) if house.garden is not None else 0,
-        "terrace": int(house.terrace) if house.terrace is not None else 0,
-        "terrace_area": house.terrace_area,
-        "num_facades": house.facades_number,
-        "swimming_pool": int(house.swimming_pool) if house.swimming_pool is not None else 0,
-        "fully_equipped_kitchen": int(house.equipped_kitchen) if house.equipped_kitchen is not None else 0,
-        "state_of_building": map_building_state(house.building_state),
-        "locality": house.full_address if house.full_address else str(house.zip_code),
-        "subtype": None,
-        "num_bathrooms": None,
-        "dist_train_km": house.dist_train_km,
-        "dist_bus_km": house.dist_bus_km,
-    }
-
-    return pd.DataFrame([row])
-
-
 # ===============================
 # Routes
 # ===============================
-@app.get("/")
+
+@app.get("/", summary="Health check")
 def healthcheck() -> str:
     return "alive"
 
@@ -143,30 +86,23 @@ def predict_info() -> dict[str, Any]:
                 "dist-bus-km": 0.3,
                 "building-state": "GOOD",
             }
-         },
-     }
+        },
+    }
 
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict_price(request: PredictionRequest) -> PredictionResponse:
     try:
-        normalized_df = normalize_payload(request.data)
-        preprocessed_df = preprocess(normalized_df)
-        prediction_value = predict(preprocessed_df)
-
-        if hasattr(prediction_value, "__len__") and not isinstance(prediction_value, (str, bytes)):
-            prediction_value = prediction_value[0]
-
-        return PredictionResponse(
-            prediction=float(prediction_value),
-            status_code=200,
-        )
+        raw = request.data.model_dump(by_alias=True)
+        X = preprocess(raw)
+        price = predict(X)
+        return PredictionResponse(prediction=price, status_code=200)
 
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
 
     except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=str(exc),
-        ) from exc
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(exc)}")
