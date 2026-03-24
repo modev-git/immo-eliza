@@ -11,7 +11,7 @@ import joblib
 import pandas as pd
 
 # Load model once
-_MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "model.pkl")
+_MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "model.joblib")
 
 try:
     _pipeline = joblib.load(_MODEL_PATH)
