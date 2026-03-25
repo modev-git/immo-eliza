@@ -19,7 +19,7 @@
 ## Base URL
 
 ```
-https://<your-service>.onrender.com
+https://immo-eliza-ezyg.onrender.com/
 ```
 
 Interactive docs (Swagger UI) available at `/docs`.

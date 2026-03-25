@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ImmoEliza API — Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0e0f11;
+    --bg2: #16181c;
+    --bg3: #1e2026;
+    --border: #2a2d35;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --accent3: #f060c8;
+    --text: #e8eaf0;
+    --muted: #7a7f94;
+    --get: #60f0a8;
+    --post: #c8f060;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── Grid noise overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 80% 0%, rgba(200,240,96,.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 10% 100%, rgba(96,200,240,.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Sidebar ── */
+  nav {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 40px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .nav-logo {
+    padding: 0 28px 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .nav-logo .wordmark {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 1.35rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    display: block;
+  }
+
+  .nav-logo .sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .nav-version {
+    display: inline-block;
+    background: rgba(200,240,96,.12);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+
+  .nav-section {
+    padding: 0 28px;
+    margin-bottom: 8px;
+  }
+
+  .nav-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    margin-top: 20px;
+    display: block;
+  }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all .2s;
+    margin-bottom: 2px;
+  }
+
+  nav a:hover { background: var(--bg3); color: var(--text); }
+  nav a.active { background: rgba(200,240,96,.1); color: var(--accent); }
+
+  .method-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .pill-get  { background: rgba(96,240,168,.15); color: var(--get); }
+  .pill-post { background: rgba(200,240,96,.15); color: var(--post); }
+
+  /* ── Main content ── */
+  main {
+    padding: 60px 72px;
+    max-width: 900px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    margin-bottom: 72px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(2.4rem, 4vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.8;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 36px;
+    padding-top: 36px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-item { display: flex; flex-direction: column; gap: 4px; }
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.6rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--muted); }
+
+  /* ── Base URL card ── */
+  .base-url-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 56px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .base-url-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+  }
+
+  .base-url-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--accent2);
+    background: rgba(96,200,240,.08);
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(96,200,240,.2);
+  }
+
+  /* ── Section headings ── */
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Endpoint cards ── */
+  .endpoint {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+    transition: border-color .2s;
+  }
+
+  .endpoint:hover { border-color: #3a3d47; }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 24px;
+    cursor: pointer;
+  }
+
+  .method-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 5px;
+    min-width: 52px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .badge-get  { background: rgba(96,240,168,.15); color: var(--get); border: 1px solid rgba(96,240,168,.25); }
+  .badge-post { background: rgba(200,240,96,.15);  color: var(--post); border: 1px solid rgba(200,240,96,.25); }
+
+  .endpoint-path {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+
+  .endpoint-desc {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .endpoint-body {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .endpoint-summary {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(42,45,53,.6);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+  .field-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--accent2);
+  }
+
+  .field-type {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--accent3);
+  }
+
+  .badge-required {
+    background: rgba(240,96,96,.12);
+    color: #f09060;
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .badge-optional {
+    background: rgba(122,127,148,.1);
+    color: var(--muted);
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── Code blocks ── */
+  .code-block {
+    background: #0a0b0d;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-lang {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  pre {
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #c8d0e8;
+  }
+
+  .hl-key    { color: var(--accent2); }
+  .hl-str    { color: #f0c860; }
+  .hl-num    { color: var(--accent3); }
+  .hl-bool   { color: var(--get); }
+  .hl-comment{ color: var(--muted); font-style: italic; }
+
+  /* ── Response examples ── */
+  .response-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--muted);
+    background: none;
+  }
+
+  .tab.success { border-color: rgba(96,240,168,.3); color: var(--get); }
+  .tab.error   { border-color: rgba(240,96,96,.3); color: #f09060; }
+
+  /* ── Error table ── */
+  .http-code {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .code-200 { color: var(--get); }
+  .code-400 { color: #f0c860; }
+  .code-503 { color: #f09060; }
+  .code-500 { color: #f06060; }
+
+  /* ── Model info ── */
+  .model-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .model-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .model-card-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .model-card-value {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--accent);
+  }
+
+  .model-card-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0 0;
+    margin-top: 48px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero        { animation: fadeUp .6s ease both; }
+  .base-url-card { animation: fadeUp .6s .1s ease both; }
+  .section     { animation: fadeUp .6s .15s ease both; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    nav { position: static; height: auto; }
+    main { padding: 32px 24px; }
+    .model-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <nav>
+    <div class="nav-logo">
+      <span class="wordmark">ImmoEliza</span>
+      <span class="sub">Price Prediction API</span>
+      <span class="nav-version">v1.0.0</span>
+    </div>
+
+    <div class="nav-section">
+      <span class="nav-label">Overview</span>
+      <a href="#introduction" class="active">Introduction</a>
+      <a href="#base-url">Base URL</a>
+      <a href="#model">Model Info</a>
+    </div>
+
+    <div class="nav-section">
+      <span class="nav-label">Endpoints</span>
+      <a href="#health">
+        <span class="method-pill pill-get">GET</span> /
+      </a>
+      <a href="#predict-get">
+        <span class="method-pill pill-get">GET</span> /predict
+      </a>
+      <a href="#predict-post">
+        <span class="method-pill pill-post">POST</span> /predict
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <span class="nav-label">Reference</span>
+      <a href="#fields">Fields</a>
+      <a href="#errors">Error Codes</a>
+      <a href="#example">Full Example</a>
+    </div>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main>
+
+    <!-- Hero -->
+    <div class="hero" id="introduction">
+      <p class="hero-eyebrow">Belgian Real Estate · REST API</p>
+      <h1>Predict property<br/><em>prices instantly.</em></h1>
+      <p>Send property features in JSON — get back a predicted market price in euros. Powered by an XGBoost model trained on 23,000+ Belgian listings.</p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num">0.786</span>
+          <span class="stat-label">R² Score</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">23k+</span>
+          <span class="stat-label">Training listings</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">11</span>
+          <span class="stat-label">Belgian provinces</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">3</span>
+          <span class="stat-label">Routes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Base URL -->
+    <div id="base-url" class="base-url-card">
+      <span class="base-url-label">Base URL</span>
+      <span class="base-url-value">https://immo-eliza-ezyg.onrender.com/docs</span>
+    </div>
+
+    <!-- Endpoints -->
+    <div class="section" id="health">
+      <h2 class="section-title">Endpoints</h2>
+
+      <!-- GET / -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/</span>
+          <span class="endpoint-desc">Health check</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-summary">Returns <code style="color:var(--accent2);font-family:'DM Mono',monospace">"alive"</code> when the server is running. Use this to verify the service is up before making predictions.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Response · 200 OK</span>
+            </div>
+            <pre>"alive"</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /predict -->
+      <div class="endpoint" id="predict-get">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/predict</span>
+          <span class="endpoint-desc">Endpoint documentation</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-summary">Returns a JSON object describing the expected input format for the POST /predict endpoint — useful for self-discovery without reading these docs.</p>
+        </div>
+      </div>
+
+      <!-- POST /predict -->
+      <div class="endpoint" id="predict-post">
+        <div class="endpoint-header">
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/predict</span>
+          <span class="endpoint-desc">Predict a property price</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-summary">Accepts property features as JSON and returns a predicted price in EUR. Missing optional fields are automatically imputed by the model.</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">Request body · application/json</span>
+              <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre id="request-example">{
+  <span class="hl-key">"data"</span>: {
+    <span class="hl-key">"area"</span>: <span class="hl-num">120</span>,                       <span class="hl-comment">// required</span>
+    <span class="hl-key">"property-type"</span>: <span class="hl-str">"HOUSE"</span>,        <span class="hl-comment">// required</span>
+    <span class="hl-key">"rooms-number"</span>: <span class="hl-num">3</span>,             <span class="hl-comment">// required</span>
+    <span class="hl-key">"zip-code"</span>: <span class="hl-num">1050</span>,               <span class="hl-comment">// required</span>
+    <span class="hl-key">"land-area"</span>: <span class="hl-num">300</span>,               <span class="hl-comment">// optional</span>
+    <span class="hl-key">"garden"</span>: <span class="hl-bool">true</span>,                 <span class="hl-comment">// optional</span>
+    <span class="hl-key">"terrace"</span>: <span class="hl-bool">true</span>,                <span class="hl-comment">// optional</span>
+    <span class="hl-key">"facades-number"</span>: <span class="hl-num">4</span>,            <span class="hl-comment">// optional</span>
+    <span class="hl-key">"equipped-kitchen"</span>: <span class="hl-bool">true</span>,       <span class="hl-comment">// optional</span>
+    <span class="hl-key">"swimming-pool"</span>: <span class="hl-bool">false</span>,         <span class="hl-comment">// optional</span>
+    <span class="hl-key">"building-state"</span>: <span class="hl-str">"GOOD"</span>         <span class="hl-comment">// optional</span>
+  }
+}</pre>
+          </div>
+
+          <div style="margin-top:24px">
+            <div class="response-tabs">
+              <button class="tab success">200 Success</button>
+              <button class="tab error">400 Error</button>
+            </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">Response · 200 OK</span></div>
+              <pre>{
+  <span class="hl-key">"prediction"</span>: <span class="hl-num">412500.0</span>,
+  <span class="hl-key">"status_code"</span>: <span class="hl-num">200</span>
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fields reference -->
+    <div class="section" id="fields">
+      <h2 class="section-title">Fields Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="field-name">area</td><td class="field-type">int</td><td><span class="badge-required">required</span></td><td>Living area in m²</td></tr>
+          <tr><td class="field-name">property-type</td><td class="field-type">str</td><td><span class="badge-required">required</span></td><td><code style="font-family:'DM Mono',monospace;color:var(--accent2)">"APARTMENT"</code> · <code style="font-family:'DM Mono',monospace;color:var(--accent2)">"HOUSE"</code> · <code style="font-family:'DM Mono',monospace;color:var(--accent2)">"OTHERS"</code></td></tr>
+          <tr><td class="field-name">rooms-number</td><td class="field-type">int</td><td><span class="badge-required">required</span></td><td>Number of bedrooms</td></tr>
+          <tr><td class="field-name">zip-code</td><td class="field-type">int</td><td><span class="badge-required">required</span></td><td>4-digit Belgian postal code</td></tr>
+          <tr><td class="field-name">land-area</td><td class="field-type">int</td><td><span class="badge-optional">optional</span></td><td>Total land surface in m²</td></tr>
+          <tr><td class="field-name">garden</td><td class="field-type">bool</td><td><span class="badge-optional">optional</span></td><td>Garden present</td></tr>
+          <tr><td class="field-name">garden-area</td><td class="field-type">int</td><td><span class="badge-optional">optional</span></td><td>Garden area in m²</td></tr>
+          <tr><td class="field-name">equipped-kitchen</td><td class="field-type">bool</td><td><span class="badge-optional">optional</span></td><td>Fully equipped kitchen</td></tr>
+          <tr><td class="field-name">full-address</td><td class="field-type">str</td><td><span class="badge-optional">optional</span></td><td>Free-text address (not used by model)</td></tr>
+          <tr><td class="field-name">swimming-pool</td><td class="field-type">bool</td><td><span class="badge-optional">optional</span></td><td>Swimming pool present</td></tr>
+          <tr><td class="field-name">furnished</td><td class="field-type">bool</td><td><span class="badge-optional">optional</span></td><td>Furnished (not used by model)</td></tr>
+          <tr><td class="field-name">terrace</td><td class="field-type">bool</td><td><span class="badge-optional">optional</span></td><td>Terrace present</td></tr>
+          <tr><td class="field-name">terrace-area</td><td class="field-type">int</td><td><span class="badge-optional">optional</span></td><td>Terrace area in m²</td></tr>
+          <tr><td class="field-name">facades-number</td><td class="field-type">int</td><td><span class="badge-optional">optional</span></td><td>Number of facades</td></tr>
+          <tr><td class="field-name">building-state</td><td class="field-type">str</td><td><span class="badge-optional">optional</span></td><td><code style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--accent2)">"NEW"</code> · <code style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--accent2)">"GOOD"</code> · <code style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--accent2)">"TO RENOVATE"</code> · <code style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--accent2)">"JUST RENOVATED"</code> · <code style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--accent2)">"TO REBUILD"</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Error codes -->
+    <div class="section" id="errors">
+      <h2 class="section-title">Error Codes</h2>
+      <table>
+        <thead>
+          <tr><th>Code</th><th>Meaning</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="http-code code-200">200</span></td>
+            <td>Success</td>
+            <td style="color:var(--muted);font-size:.82rem">Prediction returned successfully</td>
+          </tr>
+          <tr>
+            <td><span class="http-code code-400">400</span></td>
+            <td>Bad Request</td>
+            <td style="color:var(--muted);font-size:.82rem">Missing required field or invalid enum value</td>
+          </tr>
+          <tr>
+            <td><span class="http-code code-503">503</span></td>
+            <td>Service Unavailable</td>
+            <td style="color:var(--muted);font-size:.82rem">model.pkl not found on server</td>
+          </tr>
+          <tr>
+            <td><span class="http-code code-500">500</span></td>
+            <td>Internal Server Error</td>
+            <td style="color:var(--muted);font-size:.82rem">Unexpected error during prediction</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="code-block" style="margin-top:20px">
+        <div class="code-header"><span class="code-lang">Error response shape</span></div>
+        <pre>{
+  <span class="hl-key">"detail"</span>: <span class="hl-str">"Missing required field: 'area'"</span>
+}</pre>
+      </div>
+    </div>
+
+    <!-- Model info -->
+    <div class="section" id="model">
+      <h2 class="section-title">Model Details</h2>
+      <div class="model-grid">
+        <div class="model-card">
+          <p class="model-card-label">Algorithm</p>
+          <p class="model-card-value">XGBoost</p>
+          <p class="model-card-sub">XGBRegressor · 500 estimators</p>
+        </div>
+        <div class="model-card">
+          <p class="model-card-label">R² Score</p>
+          <p class="model-card-value">0.786</p>
+          <p class="model-card-sub">20% test set</p>
+        </div>
+        <div class="model-card">
+          <p class="model-card-label">Training data</p>
+          <p class="model-card-value">23,106</p>
+          <p class="model-card-sub">Belgian listings · immovlan.be</p>
+        </div>
+        <div class="model-card">
+          <p class="model-card-label">Top features</p>
+          <p class="model-card-value" style="font-size:1rem">living_area · province · rooms</p>
+          <p class="model-card-sub">By XGBoost feature importance</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full curl example -->
+    <div class="section" id="example">
+      <h2 class="section-title">Full curl Example</h2>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <pre>curl -X POST https://immo-eliza-ezyg.onrender.com/predict \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "data": {
+      "area": 120,
+      "property-type": "HOUSE",
+      "rooms-number": 3,
+      "zip-code": 1050,
+      "garden": true,
+      "building-state": "GOOD"
+    }
+  }'</span></pre>
+      </div>
+    </div>
+
+    <footer>
+      <span>ImmoEliza API · Built with FastAPI &amp; XGBoost</span>
+      <span>Data sourced from <a href="https://immovlan.be" target="_blank">immovlan.be</a></span>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => btn.textContent = 'copy', 1800);
+    });
+  }
+
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>
