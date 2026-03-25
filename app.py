@@ -62,31 +62,46 @@ def healthcheck() -> str:
 
 
 @app.get("/predict")
-def predict_info() -> dict[str, Any]:
+def predict_info():
+    """
+    Explains what data the POST /predict endpoint expects.
+    """
     return {
-        "message": "Send a POST request to /predict with house data under the 'data' key.",
-        "expected_format": {
+        "description": (
+            "Send a POST request to /predict with a JSON body containing "
+            "property features. The API returns a predicted price in EUR."
+        ),
+        "required_fields": {
+            "area": "int — living area in m²",
+            "property-type": "str — 'APARTMENT', 'HOUSE', or 'OTHERS'",
+            "rooms-number": "int — number of bedrooms",
+            "zip-code": "int — Belgian 4-digit postal code",
+        },
+        "optional_fields": {
+            "land-area": "int — total land surface in m² (houses)",
+            "garden": "bool — garden present",
+            "garden-area": "int — garden area in m²",
+            "equipped-kitchen": "bool — fully equipped kitchen",
+            "swimming-pool": "bool — swimming pool present",
+            "terrace": "bool — terrace present",
+            "terrace-area": "int — terrace area in m²",
+            "facades-number": "int — number of facades",
+            "building-state": (
+                "str — one of: 'NEW', 'GOOD', 'TO RENOVATE', "
+                "'JUST RENOVATED', 'TO REBUILD'"
+            ),
+        },
+        "example_request": {
             "data": {
                 "area": 120,
                 "property-type": "HOUSE",
                 "rooms-number": 3,
-                "zip-code": 1000,
-                "land-area": 300,
+                "zip-code": 1050,
                 "garden": True,
-                "garden-area": 100,
-                "equipped-kitchen": True,
-                "full-address": "Example street 1, 1000 Brussels",
-                "swimming-pool": False,
-                "furnished": False,
-                "open-fire": False,
-                "terrace": True,
-                "terrace-area": 20,
-                "facades-number": 2,
-                "dist-train-km": 1.2,
-                "dist-bus-km": 0.3,
                 "building-state": "GOOD",
             }
         },
+        "example_response": {"prediction": 385000.0, "status_code": 200},
     }
 
 
