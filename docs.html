@@ -726,7 +726,7 @@
           <tr>
             <td><span class="http-code code-503">503</span></td>
             <td>Service Unavailable</td>
-            <td style="color:var(--muted);font-size:.82rem">model.pkl not found on server</td>
+            <td style="color:var(--muted);font-size:.82rem">model.joblib not found on server</td>
           </tr>
           <tr>
             <td><span class="http-code code-500">500</span></td>
@@ -791,6 +791,48 @@
       "building-state": "GOOD"
     }
   }'</span></pre>
+      </div>
+    </div>
+
+    <!-- Project structure -->
+    <div class="section" id="structure">
+      <h2 class="section-title">Project Structure</h2>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">file tree</span>
+        </div>
+        <pre><span class="hl-key">immo-prediction/</span>
+│
+├── 📁 <span class="hl-str">data/</span>                         <span class="hl-comment">raw &amp; processed CSVs</span>
+├── 📁 <span class="hl-str">model/</span>
+│   └── 🔒 <span class="hl-str">model.pkl</span>               <span class="hl-comment">trained XGBoost pipeline</span>
+│
+├── 📁 <span class="hl-str">notebooks/</span>
+│   ├── 📄 <span class="hl-str">cleaning.ipynb</span>
+│   ├── 📄 <span class="hl-str">analysis.ipynb</span>
+│   └── 📄 <span class="hl-str">regression.ipynb</span>
+│
+├── 📁 <span class="hl-str">predict/</span>                      <span class="hl-comment">prediction module</span>
+│   ├── 🐍 <span class="hl-str">__init__.py</span>
+│   └── 🐍 <span class="hl-str">prediction.py</span>           <span class="hl-comment">predict() function</span>
+│
+├── 📁 <span class="hl-str">preprocessing/</span>               <span class="hl-comment">preprocessing module</span>
+│   ├── 🐍 <span class="hl-str">__init__.py</span>
+│   └── 🐍 <span class="hl-str">cleaning_data.py</span>        <span class="hl-comment">preprocess() function</span>
+│
+├── 📁 <span class="hl-str">src/</span>                          <span class="hl-comment">phases 1–3 scraping code</span>
+│   ├── 🐍 <span class="hl-str">config.py</span>
+│   ├── 🐍 <span class="hl-str">parser.py</span>
+│   └── 🐍 <span class="hl-str">scraper.py</span>
+│
+├── ⚙️  <span class="hl-str">.gitignore</span>
+├── 🐳 <span class="hl-str">Dockerfile</span>
+├── 📝 <span class="hl-str">README.md</span>
+├── 📝 <span class="hl-str">API_DOCS.md</span>
+├── 🐍 <span class="hl-str">app.py</span>                       <span class="hl-comment">FastAPI application</span>
+├── 🐍 <span class="hl-str">main.py</span>                      <span class="hl-comment">phases 1–3 entry point</span>
+├── 🐍 <span class="hl-str">train_model.py</span>               <span class="hl-comment">run once to generate model.pkl</span>
+└── 📄 <span class="hl-str">requirements.txt</span></pre>
       </div>
     </div>
 
