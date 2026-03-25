@@ -37,6 +37,9 @@ class HouseData(BaseModel):
     terrace: Optional[bool] = Field(default=False)
     terrace_area: Optional[int] = Field(None, alias="terrace-area")
     facades_number: Optional[int] = Field(None, alias="facades-number")
+    dist_train_km: Optional[float] = Field(None, alias="distance-train")
+    dist_bus_km: Optional[float] = Field(None, alias="distance-bus")
+    num_bathrooms: Optional[int] = Field(None, alias="num-bathrooms")
     building_state: Optional[
         Literal["NEW", "GOOD", "TO RENOVATE", "JUST RENOVATED", "TO REBUILD"]
     ] = Field(default=None, alias="building-state", description="State of the building")

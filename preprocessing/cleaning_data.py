@@ -105,10 +105,10 @@ def preprocess(data: dict) -> pd.DataFrame:
         building_state_encoded = BUILDING_STATE_MAP[raw_state]
 
     # ── 5. Boolean helpers ────────────────────────────────────────────────────
-    def to_binary(value) -> int | None:
+    def to_binary(value):
         """Convert bool/None to 1/0/None."""
         if value is None:
-            return None
+            return np.nan
         return 1 if value else 0
 
     # ── 6. Assemble the feature row ───────────────────────────────────────────
@@ -119,14 +119,28 @@ def preprocess(data: dict) -> pd.DataFrame:
         "living_area_m2": data.get("area"),
         "terrace": to_binary(data.get("terrace")),
         "garden": to_binary(data.get("garden")),
-        "land_surface_m2": data.get("land-area"),
-        "num_facades": data.get("facades-number"),
-        "num_bathrooms": None,  # not in API → imputer fills
-        "building_state_encoded": building_state_encoded,  # None → imputer fills
+        "land_surface_m2": (
+            data["land-area"] if data.get("land-area") is not None else np.nan
+        ),
+        "num_facades": (
+            data["facades-number"] if data.get("facades-number") is not None else np.nan
+        ),
+        "num_bathrooms": (
+            data["num-bathrooms"] if data.get("num-bathrooms") is not None else np.nan
+        ),
+        "building_state_encoded": building_state_encoded,
         "swimming_pool": to_binary(data.get("swimming-pool")),
         "fully_equipped_kitchen": to_binary(data.get("equipped-kitchen")),
-        "dist_train_km": None,  # not in API → imputer fills
-        "dist_bus_km": None,  # not in API → imputer fills
+        "dist_train_km": (
+            float(data["distance-train"])
+            if data.get("distance-train") is not None
+            else np.nan
+        ),
+        "dist_bus_km": (
+            float(data["distance-bus"])
+            if data.get("distance-bus") is not None
+            else np.nan
+        ),
         "province_code": province_code,
     }
 
