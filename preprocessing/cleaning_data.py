@@ -1,16 +1,3 @@
-"""
-preprocessing/cleaning_data.py
-
-Converts the raw JSON payload (as received by the /predict endpoint)
-into a pandas DataFrame that matches exactly what the saved sklearn pipeline
-expects as input.
-
-Public API
-----------
-preprocess(data: dict) -> pd.DataFrame
-    Raises ValueError if a required field is missing or invalid.
-"""
-
 import pandas as pd
 import numpy as np
 
@@ -59,24 +46,7 @@ FEATURE_COLS = [
 
 
 def preprocess(data: dict) -> pd.DataFrame:
-    """
-    Validate and transform a single property payload into a feature DataFrame.
-
-    Parameters
-    ----------
-    data : dict
-        The value of the "data" key from the POST body.
-
-    Returns
-    -------
-    pd.DataFrame
-        One-row DataFrame with columns matching FEATURE_COLS.
-
-    Raises
-    ------
-    ValueError
-        If a required field is absent or contains an invalid value.
-    """
+    
     # ── 1. Check required fields ──────────────────────────────────────────────
     for field in REQUIRED_FIELDS:
         if data.get(field) is None:
