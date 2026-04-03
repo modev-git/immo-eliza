@@ -1,16 +1,17 @@
-# 🏠 ImmoEliza — Belgian Real Estate Analysis
+# 🏠 ImmoEliza — Belgian Real Estate Analysis & Price Prediction API
 
-A complete data pipeline for collecting, cleaning, and analysing real estate listings from [immovlan.be](https://immovlan.be/en) — covering houses and apartments for sale across all Belgian provinces.
+A complete data pipeline for collecting, cleaning, analysing, and predicting real estate prices from [immovlan.be](https://immovlan.be/en) — covering houses and apartments for sale across all Belgian provinces.
 
 ---
 
 ## 📋 Project Overview
 
-This project was built in three stages:
+This project was built in four stages:
 
 1. **Scraping** — Collecting ~26,000 property listings from Immovlan across all 11 Belgian provinces, using price-range segmentation to bypass the 50-page query limit.
 2. **Cleaning** — Removing duplicates, handling missing values, filtering outliers, and engineering new features for analysis.
 3. **Analysis** — Exploring correlations, regional price differences, municipality rankings, and property size distributions to extract actionable market insights.
+4. **API Deployment** — A REST API built with FastAPI that serves price predictions from a trained XGBoost model, deployed on Render via Docker.
 
 ---
 
@@ -42,19 +43,43 @@ https://immovlan.be/en/real-estate?transactiontypes=for-sale,in-public-sale&prop
 ## 📁 Project Structure
 
 ```
-├── 📁 data
-│   ├── 📁 processed
-│   │   └── 📄 listings.csv
-│   └── 📁 raw
-│       └── 📄 all_provinces_links.csv
-├── 📁 src
-│   ├── 🐍 config.py
-│   ├── 🐍 parser.py
-│   └── 🐍 scraper.py
-├── ⚙️ .gitignore
-├── 📝 README.md
-├── 🐍 main.py
-└── 📄 requirements.txt
+immo-prediction/
+│
+├── 📁 data/
+│   ├── 📁 raw/
+│   │   └── all_provinces_links.csv
+│   └── 📁 processed/
+│       └── cleaned_listings.csv
+│
+├── 📁 model/
+│   └── model.pkl                  ← trained XGBoost pipeline
+│
+├── 📁 notebooks/
+│   ├── cleaning.ipynb
+│   ├── analysis.ipynb
+│   └── regression.ipynb
+│
+├── 📁 predict/                    ← prediction module
+│   ├── __init__.py
+│   └── prediction.py
+│
+├── 📁 preprocessing/              ← preprocessing module
+│   ├── __init__.py
+│   └── cleaning_data.py
+│
+├── 📁 src/                        ← phases 1–3 scraping code
+│   ├── config.py
+│   ├── parser.py
+│   └── scraper.py
+│
+├── .gitignore
+├── API_DOCS.md
+├── Dockerfile
+├── README.md
+├── app.py                         ← FastAPI application
+├── main.py                        ← phases 1–3 entry point
+├── requirements.txt
+└── train_model.py                 ← run once to generate model.pkl
 ```
 
 ---
@@ -123,7 +148,7 @@ The cleaning pipeline (`cleaning.ipynb`) processes the raw `listings.csv` into a
 
 | Step | Description |
 |---|---|
-| **Remove duplicates** | Dropps duplicate rows |
+| **Remove duplicates** | Drops duplicate rows |
 | **Fill binary flags** | `swimming_pool`, `garden`, `terrace`, `fully_equipped_kitchen`, `num_facades` filled with `0` where null (absence = not present) |
 | **Conditional fill** | `garden_area_m2` and `terrace_area_m2` filled with `0` only when the corresponding flag is `0` |
 | **Remove price outliers** | Dropped listings with `price_eur < €20,000` (likely data errors) |
@@ -151,8 +176,6 @@ The analysis notebook (`analysis.ipynb`) answers the following questions using t
 
 ### Correlation with price
 
-The strongest predictors of listing price are:
-
 | Variable | Correlation (r) |
 |---|---|
 | `living_area_m2` | 0.57 |
@@ -165,24 +188,108 @@ The strongest predictors of listing price are:
 
 ### Inter-variable correlations
 
-- **Rooms ↔ Living area** (r=0.68): More rooms almost always means more total area — they measure the same thing differently.
-- **Garden area ↔ Land surface** (r=0.77): Larger plots naturally have more garden — these two carry overlapping information.
+- **Rooms ↔ Living area** (r=0.68): More rooms almost always means more total area.
+- **Garden area ↔ Land surface** (r=0.77): Larger plots naturally have more garden.
 - **Garden ↔ Number of facades** (r=0.33): Properties with gardens tend to be detached villas with 4 facades.
 - **Building state ↔ Price** (r=0.20): Location and size dominate. A run-down villa in Brussels still outprices a renovated property in rural Wallonia.
 
-*Methodology: municipalities with fewer than 10 listings were excluded to ensure statistical reliability.*
-
 ### The 5 most important variables
 
-1. **Living area (m²)** — Directly determines how much space a buyer gets for their money. The single strongest predictor (r=0.57).
-2. **Locality** — Proximity to major cities captures demand, infrastructure, and prestige simultaneously.
-3. **Number of rooms** — A family of 4 will prefer 3+ rooms even at the same total area. Room count is priced independently of size.
-4. **Land surface (m²)** — Larger plots mean more privacy and future upgrade potential.
-5. **State of building** — Better condition means faster occupancy with no renovation cost — directly affects both price and time-to-sale.
+1. **Living area (m²)** — The single strongest predictor (r=0.57).
+2. **Locality** — Proximity to major cities captures demand, infrastructure, and prestige.
+3. **Number of rooms** — Priced independently of total size.
+4. **Land surface (m²)** — Larger plots mean more privacy and upgrade potential.
+5. **State of building** — Better condition means faster occupancy with no renovation cost.
 
 ### Business insight
 
-Approximately 80% of listings sit between **€200,000 and €450,000** — the Belgian market's "Golden Range". A property search engine should optimise its default filters, UI layout, and recommendation algorithms around this price band to serve the highest volume of buyers.
+Approximately 80% of listings sit between **€200,000 and €450,000** — the Belgian market's "Golden Range".
+
+---
+
+## 🤖 Phase 4 — Price Prediction API
+
+### Overview
+
+| Property | Value |
+|---|---|
+| Framework | FastAPI |
+| Model | XGBoost Regressor |
+| R² Score | 0.786 |
+| Deployment | Render (Docker) |
+| Live URL | https://immo-eliza-ezyg.onrender.com |
+| Interactive docs | https://immo-eliza-ezyg.onrender.com/docs |
+
+### Routes
+
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/` | Health check — returns `"alive"` |
+| `GET` | `/predict` | Describes the POST endpoint format |
+| `POST` | `/predict` | Predicts a property price |
+
+### Example request
+
+```bash
+curl -X POST https://immo-eliza-ezyg.onrender.com/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "area": 120,
+      "property-type": "HOUSE",
+      "rooms-number": 3,
+      "zip-code": 1050,
+      "garden": true,
+      "building-state": "GOOD"
+    }
+  }'
+```
+
+### Example response
+
+```json
+{
+  "prediction": 412500.0,
+  "status_code": 200
+}
+```
+
+### Required fields
+
+| Field | Type | Description |
+|---|---|---|
+| `area` | `int` | Living area in m² |
+| `property-type` | `str` | `"APARTMENT"` · `"HOUSE"` · `"OTHERS"` |
+| `rooms-number` | `int` | Number of bedrooms |
+| `zip-code` | `int` | 4-digit Belgian postal code |
+
+> All other fields are optional. Missing values are automatically imputed by the model. See [API_DOCS.md](API_DOCS.md) for the full fields reference.
+
+### Run locally
+
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Train and save the model
+python train_model.py --data data/processed/cleaned_listings.csv
+
+# 4. Start the API
+uvicorn app:app --reload --port 8000
+```
+
+Open `http://localhost:8000/docs` for the interactive Swagger UI.
+
+### Docker
+
+```bash
+docker build -t immo-api .
+docker run -p 8000:8000 immo-api
+```
 
 ---
 
@@ -194,15 +301,11 @@ Approximately 80% of listings sit between **€200,000 and €450,000** — the 
 | `property_type` | `str` | High-level type | `House`, `Apartment` |
 | `subtype` | `str` | Detailed subtype | `Villa`, `Apartment` |
 | `price_eur` | `int` | Listing price in euros | `370000` |
-| `type_of_sale` | `str` | Sale method | `for sale` |
 | `num_rooms` | `float` | Number of bedrooms | `3.0` |
 | `living_area_m2` | `float` | Living surface in m² | `130.0` |
 | `fully_equipped_kitchen` | `float` | Kitchen fully equipped (0/1) | `0.0`, `1.0` |
-| `furnished` | `float` | Furnished flag (0/1) | `0.0`, `1.0` |
 | `terrace` | `float` | Terrace present (0/1) | `1.0`, `0.0` |
-| `terrace_area_m2` | `float` | Terrace area in m² | `20.0` |
 | `garden` | `float` | Garden present (0/1) | `1.0`, `0.0` |
-| `garden_area_m2` | `float` | Garden area in m² | `150.0` |
 | `land_surface_m2` | `float` | Total plot area in m² | `1328.0` |
 | `num_facades` | `float` | Number of building facades | `4.0` |
 | `swimming_pool` | `float` | Swimming pool (0/1) | `0.0`, `1.0` |
@@ -210,24 +313,25 @@ Approximately 80% of listings sit between **€200,000 and €450,000** — the 
 | `postal_code` | `int` | Extracted 4-digit postal code | `7540` |
 | `region` | `str` | Brussels / Flanders / Wallonia | `Flanders` |
 | `price_per_m2` | `float` | Price divided by living area | `2846.15` |
-| `avg_price_locality` | `float` | Mean price in the same locality | `412000.0` |
 | `building_state_encoded` | `int` | Ordinal encoding of building state | `5` |
-| `outlier_flag` | `bool` | High price + few rooms flag | `False` |
 
 ---
 
 ## 📦 Dependencies
 
 ```
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+pydantic==2.6.4
+scikit-learn==1.4.2
+xgboost==1.7.6
+pandas==2.2.1
+numpy==1.26.4
+joblib==1.3.2
 beautifulsoup4==4.14.3
 requests==2.32.5
 lxml==6.0.2
-pandas
-matplotlib
-seaborn
 ```
-
-Install all at once:
 
 ```bash
 pip install -r requirements.txt
